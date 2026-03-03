@@ -235,6 +235,9 @@ PAYNOW_INTEGRATION_KEY=0ac007f7-e809-424d-9d25-433d27335488
 
 ## 🧪 Testing Requests
 
+> ⚠️ **Note:** New PayNow integrations start in **test mode**. No real funds are transferred during testing. Use your **merchant account email** for the `authemail` field when creating a transaction; otherwise the fake payment cannot be completed. After at least one successful test, return to the PayNow dashboard and click **Request to be Set Live** to enable real payments.
+
+
 ### Using cURL
 
 **1. Health Check:**
@@ -267,6 +270,29 @@ curl -X POST http://localhost:3000/api/check-payment-status \
   -H "Content-Type: application/json" \
   -d '{"pollUrl": "https://api.paynow.co.zw/poll/..."}'
 ```
+
+### Express Checkout Test Tokens
+When testing mobile money/cards via the `/interface/remotetransaction` API, include a `token` parameter to simulate results (test mode only). Example request body includes `method`, `amount`, `reference`, etc.
+
+- **Mobile Money (ecocash / onemoney):**
+  - `0771111111` → SUCCESS after 5 s
+  - `0772222222` → DELAYED SUCCESS (30 s)
+  - `0773333333` → CANCELLED (30 s)
+  - `0774444444` → Insufficient balance error
+
+- **Visa/MasterCard (`method=vmc`):**
+  - `{11111111-1111-1111-1111-111111111111}` → SUCCESS (5 s)
+  - `{22222222-2222-2222-2222-222222222222}` → PENDING then SUCCESS (30 s)
+  - `{33333333-3333-3333-3333-333333333333}` → CANCELLED (30 s)
+  - `{44444444-4444-4444-4444-444444444444}` → Insufficient balance
+
+- **Zimswitch (`method=zimswitch`):**
+  - `11111111111111111111111111111111` → SUCCESS (5 s)
+  - `22222222222222222222222222222222` → PENDING then SUCCESS (30 s)
+  - `33333333333333333333333333333333` → CANCELLED (30 s)
+  - `44444444444444444444444444444444` → Insufficient balance
+
+These tokens let you control the simulated response while keeping your integration in test mode. Remember to use your merchant email address in `authemail` for the fake payment login.
 
 ### Using Postman
 

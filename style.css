@@ -101,14 +101,15 @@ nav a:hover {
 
 /* Buttons */
 .btn {
-    padding: 10px 20px;
+    padding: 10px 16px;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 1rem;
+    font-size: 0.95rem;
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
+    box-sizing: border-box;
 }
 
 .btn-primary {
@@ -134,8 +135,8 @@ nav a:hover {
 .btn-add {
     background-color: var(--success-color);
     color: white;
-    padding: 8px 16px;
-    font-size: 0.9rem;
+    padding: 8px 14px;
+    font-size: 0.85rem;
 }
 
 .btn-add:hover {
@@ -144,9 +145,9 @@ nav a:hover {
 
 .btn-checkout {
     width: 100%;
-    margin-top: 20px;
-    padding: 15px;
-    font-size: 1.1rem;
+    margin-top: 1rem;
+    padding: 12px;
+    font-size: 1rem;
 }
 
 /* Products Section */
@@ -373,13 +374,19 @@ footer {
 
 .modal-content {
     background-color: white;
-    margin: 5% auto;
-    padding: 2rem;
+    margin: auto;
+    padding: 1.5rem;
     border-radius: 8px;
-    width: 90%;
+    width: 95%;
     max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
     animation: slideIn 0.3s ease;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 @keyframes slideIn {
@@ -394,17 +401,19 @@ footer {
 }
 
 .modal-content h2 {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     color: var(--primary-color);
+    font-size: 1.3rem;
 }
 
 .close {
     color: #aaa;
     float: right;
-    font-size: 28px;
+    font-size: 24px;
     font-weight: bold;
     cursor: pointer;
     transition: color 0.3s ease;
+    line-height: 1;
 }
 
 .close:hover,
@@ -415,51 +424,55 @@ footer {
 /* Payment Details */
 .payment-details {
     background-color: var(--light-bg);
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: 5px;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .payment-details p {
     margin: 0.5rem 0;
+    font-size: 0.95rem;
 }
 
 .divider {
     border-top: 2px solid var(--border-color);
-    margin: 1rem 0;
+    margin: 0.75rem 0;
 }
 
 .paynow-section {
     background: white;
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: 5px;
     border-left: 4px solid var(--primary-color);
 }
 
 .paynow-section h3 {
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
     color: var(--primary-color);
+    font-size: 1rem;
 }
 
 .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
 }
 
 .form-group label {
     display: block;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     font-weight: 600;
     color: var(--text-color);
+    font-size: 0.95rem;
 }
 
 .form-group input,
 .form-group select {
     width: 100%;
-    padding: 10px;
+    padding: 8px;
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-size: 1rem;
     transition: border-color 0.3s ease;
+    box-sizing: border-box;
 }
 
 .form-group input:focus,
@@ -472,10 +485,10 @@ footer {
 .payment-info {
     background-color: #e7f3ff;
     border-left: 4px solid var(--primary-color);
-    padding: 1rem;
+    padding: 0.75rem;
     border-radius: 4px;
-    margin: 1rem 0;
-    font-size: 0.9rem;
+    margin: 0.75rem 0;
+    font-size: 0.85rem;
 }
 
 .payment-info ol {
@@ -483,7 +496,7 @@ footer {
 }
 
 .payment-info li {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .reference-box {
@@ -503,15 +516,16 @@ footer {
 #paynow-button-container {
     background-color: #f9f9f9;
     border: 2px solid #007bff;
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: 8px;
-    margin: 1.5rem 0;
+    margin: 1rem 0;
     text-align: center;
 }
 
 #paynow-button-container a {
     display: inline-block;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    max-width: 100%;
 }
 
 #paynow-button-container a:hover {
@@ -523,10 +537,13 @@ footer {
     max-width: 100%;
     height: auto;
     display: inline-block;
+    width: 100%;
+    max-width: 250px;
 }
 
 #paynow-button-container p {
     margin: 0;
+    font-size: 0.9rem;
 }
 
 /* Responsive */
@@ -558,8 +575,132 @@ footer {
     }
 
     .modal-content {
-        width: 95%;
-        margin: 20% auto;
+        width: 96%;
+        max-width: 100%;
+        padding: 1rem;
+        max-height: 85vh;
+    }
+
+    .modal-content h2 {
+        font-size: 1.1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group {
+        margin-bottom: 0.8rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    .payment-details {
+        padding: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+
+    #paynow-button-container {
+        padding: 0.75rem;
+        margin: 0.75rem 0;
+    }
+
+    #paynow-button-container img {
+        max-width: 90%;
+        min-width: 150px;
+    }
+
+    .btn-checkout {
+        padding: 10px;
+        font-size: 0.95rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-content {
+        width: 100%;
+        padding: 0.75rem;
+    }
+
+    .modal-content h2 {
+        font-size: 1rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .close {
+        font-size: 20px;
+    }
+
+    .form-group {
+        margin-bottom: 0.6rem;
+    }
+
+    .form-group label {
+        font-size: 0.9rem;
+    }
+
+    .form-group input,
+    .form-group select {
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    .payment-details {
+        padding: 0.6rem;
+        margin-bottom: 0.6rem;
+    }
+
+    .payment-details p {
+        font-size: 0.85rem;
+        margin: 0.3rem 0;
+    }
+
+    .payment-info {
+        padding: 0.6rem;
+        margin: 0.6rem 0;
+        font-size: 0.8rem;
+    }
+
+    .payment-info ol {
+        margin-left: 1.2rem;
+    }
+
+    .payment-info li {
+        margin-bottom: 0.3rem;
+    }
+
+    .divider {
+        margin: 0.5rem 0;
+    }
+
+    .paynow-section {
+        padding: 0.75rem;
+    }
+
+    .paynow-section h3 {
+        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+    }
+
+    #paynow-button-container {
+        padding: 0.6rem;
+        margin: 0.6rem 0;
+    }
+
+    #paynow-button-container img {
+        max-width: 85%;
+        min-width: 140px;
+    }
+
+    .btn-checkout {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .btn {
+        padding: 8px 12px;
+        font-size: 0.9rem;
     }
 }
 

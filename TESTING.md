@@ -3,7 +3,42 @@
 ## Overview
 This guide explains how to test the PayNow Zimbabwe payment integration in the dummy website.
 
+> ⚠️ **Test Mode Reminder:**  
+> When you first create an integration it is in **test mode**. No real money is moved – it's all simulated. You can create, cancel, and pay transactions to exercise various scenarios. Only the merchant account used to create the integration can log in and fake a payment; other emails will see a message saying the merchant is in testing.
+>
+> - Use your **merchant account email** as the `authemail` field when initiating test transactions. Mismatched emails will prevent you from completing the fake payment.
+> - After you complete one successful test transaction, visit the PayNow dashboard and click **Request to be Set Live** to upgrade your integration for real payments.
+
+
 ---
+
+## 🧪 PayNow Test Mode Reference
+
+### Express Checkout (mobile money and cards)
+In test mode you can simulate a variety of outcomes by using the following pre‑configured numbers/tokens when calling `/interface/remotetransaction` (include `token=` along with other required fields).
+
+#### Mobile Money (ecocash / onemoney)
+- **Success:** 0771111111 → sends SUCCESS after 5 s
+- **Delayed Success:** 0772222222 → sends SUCCESS after 30 s (simulates slow authorisation)  
+- **User Cancelled:** 0773333333 → sends FAILED after 30 s  
+- **Insufficient Balance:** 0774444444 → immediate “Insufficient balance” error
+
+> Make sure the `authemail` field matches your merchant login email during these tests.
+
+#### Visa / MasterCard (vmc)
+Use one of these tokens with `method=vmc`:
+- `{11111111-1111-1111-1111-111111111111}` → SUCCESS (5 s)
+- `{22222222-2222-2222-2222-222222222222}` → PENDING then SUCCESS (30 s)
+- `{33333333-3333-3333-3333-333333333333}` → CANCELLED (30 s)
+- `{44444444-4444-4444-4444-444444444444}` → Insufficient balance error
+
+#### Zimswitch (zimswitch)
+Tokens for `method=zimswitch`:
+- `11111111111111111111111111111111` → SUCCESS (5 s)
+- `22222222222222222222222222222222` → PENDING then SUCCESS (30 s)
+- `33333333333333333333333333333333` → CANCELLED (30 s)
+- `44444444444444444444444444444444` → Insufficient balance error
+
 
 ## 🧪 Test Scenarios
 
