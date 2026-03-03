@@ -28,7 +28,11 @@ const PAYNOW_CONFIG = {
     apiUrl: 'https://www.paynow.co.zw/api/initiate-transaction',
     pollUrl: 'https://www.paynow.co.zw/api/poll-transaction',
     returnUrl: process.env.RETURN_URL || 'http://localhost:3000/payment-return',
-    resultUrl: process.env.RESULT_URL || 'http://localhost:3000/payment-result'
+    resultUrl: process.env.RESULT_URL || 'http://localhost:3000/payment-result',
+    // Merchant email used for test mode fake payments and auth
+    authemail: process.env.PAYNOW_MERCHANT_EMAIL || '',
+    // Default currency for transactions
+    currency: process.env.CURRENCY || 'USD'
 };
 
 console.log(`🚀 PayNow Integration Server`);
@@ -51,7 +55,7 @@ app.post('/api/process-payment', async (req, res) => {
         } = req.body;
 
         console.log(`\n💳 Processing payment for: ${reference}`);
-        console.log(`   Amount: ZWL ${totalAmount}`);
+        console.log(`   Amount: ${PAYNOW_CONFIG.currency} ${totalAmount}`);
         console.log(`   Customer: ${customerName}`);
 
         // Validate required fields
@@ -68,7 +72,7 @@ app.post('/api/process-payment', async (req, res) => {
             integrationId: PAYNOW_CONFIG.integrationId,
             reference: reference,
             amount: Math.round(totalAmount),
-            currency: 'ZWL',
+            currency: PAYNOW_CONFIG.currency,
             customerName: customerName,
             customerEmail: customerEmail,
             customerPhone: customerPhone,
@@ -77,6 +81,13 @@ app.post('/api/process-payment', async (req, res) => {
             resultUrl: PAYNOW_CONFIG.resultUrl,
             auditNumber: `AUD-${Date.now()}`
         };
+
+        // Include authemail for test-mode faked payments (must match merchant account)
+        if (PAYNOW_CONFIG.authemail) {
+            transactionPayload.authemail = PAYNOW_CONFIG.authemail;
+        } else {
+            console.warn('⚠️ PAYNOW_MERCHANT_EMAIL not set. Test-mode faked payments require authemail to match merchant account.');
+        }
 
         // Generate HMAC signature
         const signature = generateSignature(transactionPayload);
@@ -107,7 +118,7 @@ app.post('/api/process-payment', async (req, res) => {
                 paynowReference: response.data.paynowreference,
                 status: 'pending',
                 amount: totalAmount,
-                currency: 'ZWL',
+                currency: PAYNOW_CONFIG.currency,
                 customer: {
                     name: customerName,
                     email: customerEmail,

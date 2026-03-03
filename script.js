@@ -106,9 +106,9 @@ function updateCartDisplay() {
     
     // Update summary
     const totals = calculateTotals();
-    document.getElementById('subtotal').textContent = `ZWL ${totals.subtotal.toLocaleString()}`;
-    document.getElementById('tax').textContent = `ZWL ${Math.round(totals.tax).toLocaleString()}`;
-    document.getElementById('total').textContent = `ZWL ${Math.round(totals.total).toLocaleString()}`;
+    document.getElementById('subtotal').textContent = `USD ${totals.subtotal.toLocaleString()}`;
+    document.getElementById('tax').textContent = `USD ${Math.round(totals.tax).toLocaleString()}`;
+    document.getElementById('total').textContent = `USD ${Math.round(totals.total).toLocaleString()}`;
 }
 
 // Checkout function
@@ -127,7 +127,7 @@ function openPaymentModal(total) {
     const modal = document.getElementById('payment-modal');
     const paymentAmount = document.getElementById('payment-amount');
     
-    paymentAmount.textContent = `ZWL ${Math.round(total).toLocaleString()}`;
+    paymentAmount.textContent = `USD ${Math.round(total).toLocaleString()}`;
     
     // Generate unique reference
     const reference = generatePayNowReference();
