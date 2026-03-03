@@ -27,7 +27,8 @@ app.use(cors());
 const PAYNOW_CONFIG = {
     integrationId: process.env.PAYNOW_INTEGRATION_ID || '23629',
     integrationKey: process.env.PAYNOW_INTEGRATION_KEY || '0ac007f7-e809-424d-9d25-433d27335488',
-    apiUrl: 'https://www.paynow.co.zw/api/initiate-transaction',
+    // Per PayNow docs, use the interface endpoint for initiating transactions
+    apiUrl: 'https://www.paynow.co.zw/interface/initiatetransaction',
     pollUrl: 'https://www.paynow.co.zw/api/poll-transaction',
     returnUrl: process.env.RETURN_URL || 'http://localhost:3000/payment-return',
     resultUrl: process.env.RESULT_URL || 'http://localhost:3000/payment-result',
@@ -69,59 +70,51 @@ app.post('/api/process-payment', async (req, res) => {
             });
         }
 
-        // Prepare PayNow transaction payload
-        const transactionPayload = {
-            integrationId: PAYNOW_CONFIG.integrationId,
+        // Prepare PayNow transaction payload using correct field names and formats
+        const paynowFields = {
+            id: PAYNOW_CONFIG.integrationId,
             reference: reference,
-            amount: Math.round(totalAmount),
-            currency: PAYNOW_CONFIG.currency,
+            amount: parseFloat(totalAmount).toFixed(2), // PayNow expects a decimal string
+            additionalinfo: description || `Order ${reference}`,
+            returnurl: PAYNOW_CONFIG.returnUrl,
+            resulturl: PAYNOW_CONFIG.resultUrl,
+            authemail: customerEmail,
             // Per PayNow docs, initial status should be "Message"
-            status: 'Message',
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            description: description || `Order ${reference}`,
-            returnUrl: PAYNOW_CONFIG.returnUrl,
-            resultUrl: PAYNOW_CONFIG.resultUrl,
-            auditNumber: `AUD-${Date.now()}`
+            status: 'Message'
         };
 
-        // Include authemail for test-mode faked payments (must match merchant account)
-        if (PAYNOW_CONFIG.authemail) {
-            transactionPayload.authemail = PAYNOW_CONFIG.authemail;
-        } else {
-            console.warn('⚠️ PAYNOW_MERCHANT_EMAIL not set. Test-mode faked payments require authemail to match merchant account.');
-        }
+        // Generate SHA512 hash over all fields + integration key (no HMAC)
+        paynowFields.hash = generatePaynowHash(paynowFields, PAYNOW_CONFIG.integrationKey);
 
-        // Generate HMAC signature
-        const signature = generateSignature(transactionPayload);
-        transactionPayload.signature = signature;
+        console.log(`   Hash: ${paynowFields.hash.substring(0, 20)}...`);
 
-        console.log(`   Signature: ${signature.substring(0, 20)}...`);
-
-        // Send to PayNow API
+        // Send as URL-encoded form data (required by PayNow)
         console.log(`   📤 Sending to PayNow API...`);
+        const formBody = new URLSearchParams(paynowFields).toString();
+
         const response = await axios.post(
             PAYNOW_CONFIG.apiUrl,
-            transactionPayload,
+            formBody,
             {
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
+                    'Content-Type': 'application/x-www-form-urlencoded'
                 },
                 timeout: 10000
             }
         );
 
-        console.log(`   ✅ PayNow Response:`, response.data);
+        // PayNow responds with URL-encoded key=value pairs, not JSON
+        const result = Object.fromEntries(new URLSearchParams(response.data));
+
+        console.log(`   ✅ PayNow Response:`, result);
 
         // Handle PayNow response
-        if (response.data.success) {
+        if (result.status && result.status.toLowerCase() === 'ok') {
             const paymentRecord = {
                 reference: reference,
-                paynowReference: response.data.paynowreference,
+                paynowReference: result.paynowreference,
                 status: 'pending',
-                amount: totalAmount,
+                amount: parseFloat(totalAmount).toFixed(2),
                 currency: PAYNOW_CONFIG.currency,
                 customer: {
                     name: customerName,
@@ -129,8 +122,8 @@ app.post('/api/process-payment', async (req, res) => {
                     phone: customerPhone
                 },
                 items: items,
-                redirectUrl: response.data.redirectUrl || response.data.link,
-                pollUrl: response.data.pollurl,
+                redirectUrl: result.browserurl,
+                pollUrl: result.pollurl,
                 createdAt: new Date().toISOString(),
                 expiresAt: new Date(Date.now() + 1800000).toISOString() // 30 mins
             };
@@ -142,20 +135,20 @@ app.post('/api/process-payment', async (req, res) => {
                 success: true,
                 message: 'Payment initiated successfully',
                 reference: reference,
-                paynowReference: response.data.paynowreference,
-                redirectUrl: response.data.redirectUrl || response.data.link,
-                paymentLink: response.data.redirectUrl || response.data.link,
+                paynowReference: result.paynowreference,
+                redirectUrl: result.browserurl,
+                paymentLink: result.browserurl,
                 poll: {
-                    url: response.data.pollurl,
+                    url: result.pollurl,
                     interval: 3000 // 3 seconds
                 }
             });
         } else {
-            console.error(`   ❌ PayNow Error:`, response.data);
+            console.error(`   ❌ PayNow Error:`, result);
             return res.status(400).json({
                 success: false,
                 message: 'Payment initiation failed',
-                error: response.data.error || response.data
+                error: result.error || result.status || result
             });
         }
     } catch (error) {
@@ -254,47 +247,13 @@ app.get('/health', (req, res) => {
 });
 
 // ============================================
-// Signature Generation
+// PayNow Hash Generation (initiate transaction)
 // ============================================
-function generateSignature(data) {
-    // Create signature string from payload
-    const signatureString = createSignatureString(data);
-    
-    // Generate HMAC using integration key
-    const signature = crypto
-        .createHmac('sha512', PAYNOW_CONFIG.integrationKey)
-        .update(signatureString)
-        .digest('hex');
-    
-    return signature;
-}
-
-// ============================================
-// Signature Verification
-// ============================================
-function verifySignature(data) {
-    const signature = data.signature;
-    const dataToSign = { ...data };
-    delete dataToSign.signature;
-    
-    const expectedSignature = generateSignature(dataToSign);
-    return signature === expectedSignature;
-}
-
-// ============================================
-// Create Signature String
-// ============================================
-function createSignatureString(data) {
-    // PayNow requires specific order for signature:
-    // integrationId + reference + amount + currency
-    const fields = [
-        data.integrationId,
-        data.reference,
-        data.amount,
-        data.currency
-    ];
-
-    return fields.join('');
+function generatePaynowHash(fields, integrationKey) {
+    // Concatenate ALL field values in the order defined on the object,
+    // then append the integration key at the end, per PayNow docs
+    const hashString = Object.values(fields).join('') + integrationKey;
+    return crypto.createHash('sha512').update(hashString).digest('hex').toUpperCase();
 }
 
 // ============================================
