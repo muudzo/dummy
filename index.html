@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechHub ZW - Digital Products Store</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1 class="logo">TechHub ZW</h1>
+            <nav>
+                <ul>
+                    <li><a href="#home">Home</a></li>
+                    <li><a href="#products">Products</a></li>
+                    <li><a href="#cart" class="cart-link">Cart <span id="cart-count">0</span></a></li>
+                    <li><a href="#contact">Contact</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero" id="home">
+        <div class="hero-content">
+            <h2>Welcome to TechHub Zimbabwe</h2>
+            <p>Your one-stop shop for digital products and services</p>
+            <a href="#products" class="btn btn-primary">Shop Now</a>
+        </div>
+    </section>
+
+    <section class="products-section" id="products">
+        <div class="container">
+            <h2>Featured Products</h2>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image">📱</div>
+                    <h3>Premium Web Template</h3>
+                    <p>Modern, responsive website template</p>
+                    <p class="price">ZWL 5,000</p>
+                    <button class="btn btn-add" onclick="addToCart(1, 'Premium Web Template', 5000)">Add to Cart</button>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">💻</div>
+                    <h3>Mobile App Course</h3>
+                    <p>Learn to build mobile applications</p>
+                    <p class="price">ZWL 8,500</p>
+                    <button class="btn btn-add" onclick="addToCart(2, 'Mobile App Course', 8500)">Add to Cart</button>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">🎨</div>
+                    <h3>UI/UX Design Kit</h3>
+                    <p>Complete design system and components</p>
+                    <p class="price">ZWL 3,200</p>
+                    <button class="btn btn-add" onclick="addToCart(3, 'UI/UX Design Kit', 3200)">Add to Cart</button>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">🔧</div>
+                    <h3>API Integration Guide</h3>
+                    <p>Comprehensive API documentation</p>
+                    <p class="price">ZWL 2,500</p>
+                    <button class="btn btn-add" onclick="addToCart(4, 'API Integration Guide', 2500)">Add to Cart</button>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">🔐</div>
+                    <h3>Security Audit Service</h3>
+                    <p>Professional website security review</p>
+                    <p class="price">ZWL 12,000</p>
+                    <button class="btn btn-add" onclick="addToCart(5, 'Security Audit Service', 12000)">Add to Cart</button>
+                </div>
+
+                <div class="product-card">
+                    <div class="product-image">📊</div>
+                    <h3>Analytics Dashboard</h3>
+                    <p>Real-time website analytics tool</p>
+                    <p class="price">ZWL 6,750</p>
+                    <button class="btn btn-add" onclick="addToCart(6, 'Analytics Dashboard', 6750)">Add to Cart</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cart-section" id="cart">
+        <div class="container">
+            <h2>Shopping Cart</h2>
+            <div id="cart-items" class="cart-items"></div>
+            <div class="cart-summary">
+                <div class="summary-row">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">ZWL 0</span>
+                </div>
+                <div class="summary-row">
+                    <span>Tax (10%):</span>
+                    <span id="tax">ZWL 0</span>
+                </div>
+                <div class="summary-row total">
+                    <span>Total:</span>
+                    <span id="total">ZWL 0</span>
+                </div>
+                <button class="btn btn-primary btn-checkout" onclick="checkout()">Proceed to Checkout</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Payment Modal -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePaymentModal()">&times;</span>
+            <h2>Complete Your Payment</h2>
+            <div class="payment-details">
+                <p><strong>Order Total:</strong> <span id="payment-amount">ZWL 0</span></p>
+                <p><strong>Payment Gateway:</strong> PayNow Zimbabwe</p>
+                <div class="divider"></div>
+                
+                <div class="paynow-section">
+                    <h3>PayNow Payment Options</h3>
+                    <form id="paynow-form" onsubmit="handlePayNowPayment(event)">
+                        <div class="form-group">
+                            <label for="customer-name">Full Name:</label>
+                            <input type="text" id="customer-name" required placeholder="Your full name">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customer-email">Email Address:</label>
+                            <input type="email" id="customer-email" required placeholder="your.email@example.com">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="customer-phone">Phone Number:</label>
+                            <input type="tel" id="customer-phone" required placeholder="+263 77 000 0000">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="paynow-reference">PayNow Reference/Reference Number:</label>
+                            <input type="text" id="paynow-reference" placeholder="Your unique reference (optional)" readonly>
+                        </div>
+
+                        <div class="payment-info">
+                            <p><strong>PayNow Payment Instructions:</strong></p>
+                            <ol>
+                                <li>USSD: Dial *120# (Econet) or *151# (Vodafone)</li>
+                                <li>Select "PayNow by ZimSwitch"</li>
+                                <li>Enter the reference number below</li>
+                                <li>Complete the payment on your phone</li>
+                                <li>Return here and confirm payment</li>
+                            </ol>
+                        </div>
+
+                        <div id="generated-reference" class="reference-box" style="display: none;">
+                            <p><strong>Your PayNow Reference:</strong></p>
+                            <p id="ref-display" style="font-size: 18px; font-weight: bold; color: #007bff;"></p>
+                            <button type="button" class="btn btn-secondary" onclick="copyReference()">Copy Reference</button>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="payment-status">Payment Method:</label>
+                            <select id="payment-status" required>
+                                <option value="">-- Select Payment Method --</option>
+                                <option value="paynow-direct">Pay Now via PayNow Link</option>
+                                <option value="paynow-ussd">Pay Now via USSD (*120# / *151#)</option>
+                                <option value="demo">Demo/Test Mode</option>
+                            </select>
+                        </div>
+
+                        <!-- PayNow Direct Link Button -->
+                        <div id="paynow-button-container" style="display: none; text-align: center; margin: 20px 0;">
+                            <p style="margin-bottom: 15px;"><strong>Click to pay directly via PayNow:</strong></p>
+                            <a id="paynow-link" href="#" target="_blank">
+                                <img src='https://www.paynow.co.zw/Content/Buttons/Medium_buttons/button_pay-now_medium.png' style='border:0; max-width: 100%;' alt='Pay Now' />
+                            </a>
+                            <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">You will be redirected to PayNow's secure payment page</p>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Complete Purchase</button>
+                        <button type="button" class="btn btn-secondary" onclick="closePaymentModal()">Cancel</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="contact-section" id="contact">
+        <div class="container">
+            <h2>Get In Touch</h2>
+            <div class="contact-info">
+                <p><strong>Email:</strong> support@techhubzw.com</p>
+                <p><strong>Phone:</strong> +263 77 123 4567</p>
+                <p><strong>Address:</strong> Harare, Zimbabwe</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 TechHub Zimbabwe. All rights reserved. | PayNow Enabled Payment Gateway</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
