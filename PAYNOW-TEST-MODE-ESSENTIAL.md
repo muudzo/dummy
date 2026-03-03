@@ -26,7 +26,7 @@ const paymentData = {
   integrationid: process.env.PAYNOW_INTEGRATION_ID,
   reference: reference,
   amount: amount,
-  currency: "ZWL",
+  currency: "USD",
   authemail: "your.merchant@email.com",  // ← MUST match your PayNow account email
   // ... other fields
 };

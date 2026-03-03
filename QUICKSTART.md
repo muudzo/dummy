@@ -116,7 +116,7 @@ Open DevTools Console to see:
 ### 1. Product Browsing
 - 6 different products with icons
 - Click "Add to Cart" to purchase
-- Prices in ZWL (Zimbabwean Dollar)
+- Prices in USD (United States Dollar)
 
 ### 2. Shopping Cart
 - Add/remove items

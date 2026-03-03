@@ -45,7 +45,7 @@ Tokens for `method=zimswitch`:
 ### Scenario 1: Single Item Purchase (Completed Payment)
 
 **Setup:**
-- Click "Add to Cart" for "Premium Web Template" (ZWL 5,000)
+- Click "Add to Cart" for "Premium Web Template" (USD 5,000)
 
 **Test Steps:**
 1. Click "Proceed to Checkout"
@@ -70,11 +70,11 @@ Tokens for `method=zimswitch`:
 
 **Setup:**
 - Add multiple items to cart:
-  - Premium Web Template (ZWL 5,000)
-  - Mobile App Course (ZWL 8,500)
-  - UI/UX Design Kit (ZWL 3,200)
+  - Premium Web Template (USD 5,000)
+  - Mobile App Course (USD 8,500)
+  - UI/UX Design Kit (USD 3,200)
   
-**Total:** ZWL 16,700 + Tax (ZWL 1,670) = **ZWL 18,370**
+**Total:** USD 16,700 + Tax (USD 1,670) = **USD 18,370**
 
 **Test Steps:**
 1. Go to Cart section
@@ -204,21 +204,21 @@ Tokens for `method=zimswitch`:
 ## 📊 Price Calculation Tests
 
 ### Test Tax Calculation
-- Item: ZWL 1,000
-- Tax (10%): ZWL 100
-- Total: ZWL 1,100
+- Item: USD 1,000
+- Tax (10%): USD 100
+- Total: USD 1,100
 
 **Verify:**
-1. Add item costing ZWL 1,000
-2. Check tax shows ZWL 100
-3. Check total shows ZWL 1,100
+1. Add item costing USD 1,000
+2. Check tax shows USD 100
+3. Check total shows USD 1,100
 
 ### Test Multiple Items
-1. Add Premium Web Template: ZWL 5,000
-2. Add API Integration Guide: ZWL 2,500
-3. Subtotal should be: ZWL 7,500
-4. Tax should be: ZWL 750
-5. Total should be: ZWL 8,250
+1. Add Premium Web Template: USD 5,000
+2. Add API Integration Guide: USD 2,500
+3. Subtotal should be: USD 7,500
+4. Tax should be: USD 750
+5. Total should be: USD 8,250
 
 ---
 
@@ -397,11 +397,11 @@ Test in these browsers:
 
 | Subtotal | Tax (10%) | Total |
 |----------|-----------|-------|
-| ZWL 1,000 | ZWL 100 | ZWL 1,100 |
-| ZWL 5,000 | ZWL 500 | ZWL 5,500 |
-| ZWL 10,000 | ZWL 1,000 | ZWL 11,000 |
-| ZWL 16,700 | ZWL 1,670 | ZWL 18,370 |
-| ZWL 50,000 | ZWL 5,000 | ZWL 55,000 |
+| USD 1,000 | USD 100 | USD 1,100 |
+| USD 5,000 | USD 500 | USD 5,500 |
+| USD 10,000 | USD 1,000 | USD 11,000 |
+| USD 16,700 | USD 1,670 | USD 18,370 |
+| USD 50,000 | USD 5,000 | USD 55,000 |
 
 **Test:** Verify each case calculates correctly
 

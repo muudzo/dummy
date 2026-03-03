@@ -199,7 +199,7 @@ location.reload()
 - Colors: Edit `style.css` `:root` section
 - Products: Edit `index.html` product cards
 - Company name: Search and replace "TechHub Zimbabwe"
-- Prices: Change ZWL amounts in `index.html`
+- Prices: Change USD amounts in `index.html`
 
 ### Advanced Changes
 - Add product images (add img tags in HTML)

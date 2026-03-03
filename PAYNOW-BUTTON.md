@@ -87,7 +87,7 @@ https://www.paynow.co.zw/Payment/Link/?q=[encoded-params]
 
 **Parameters:**
 - `search` - Customer email
-- `amount` - Payment amount (ZWL)
+- `amount` - Payment amount (USD)
 - `reference` - Unique transaction reference
 - `l` - Link code (0)
 

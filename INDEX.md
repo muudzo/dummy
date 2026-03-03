@@ -122,18 +122,18 @@ Add products to cart and test PayNow payment
 **Single Item:**
 ```
 Item: Premium Web Template
-Price: ZWL 5,000
-Tax: ZWL 500
-Total: ZWL 5,500
+Price: USD 5,000
+Tax: USD 500
+Total: USD 5,500
 Reference: PN123456ABC
 ```
 
 **Multiple Items:**
 ```
 Items: 3 products
-Subtotal: ZWL 16,700
-Tax: ZWL 1,670
-Total: ZWL 18,370
+Subtotal: USD 16,700
+Tax: USD 1,670
+Total: USD 18,370
 Reference: PN789456XYZ
 ```
 

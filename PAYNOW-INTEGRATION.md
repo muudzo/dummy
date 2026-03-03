@@ -472,7 +472,7 @@ async function sendOrderConfirmation(email, payment) {
             <h2>Order Confirmation</h2>
             <p>Thank you for your purchase!</p>
             <p><strong>Reference:</strong> ${payment.reference}</p>
-            <p><strong>Amount:</strong> ZWL ${payment.amount.toLocaleString()}</p>
+            <p><strong>Amount:</strong> USD ${payment.amount.toLocaleString()}</p>
             <p><strong>Status:</strong> ${payment.status}</p>
         `
     };

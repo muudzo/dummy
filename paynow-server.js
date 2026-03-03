@@ -18,6 +18,8 @@ const crypto = require('crypto');
 const app = express();
 
 // Middleware
+// Support both JSON (our own API) and URL-encoded bodies (PayNow webhooks)
+app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cors());
 
@@ -73,6 +75,8 @@ app.post('/api/process-payment', async (req, res) => {
             reference: reference,
             amount: Math.round(totalAmount),
             currency: PAYNOW_CONFIG.currency,
+            // Per PayNow docs, initial status should be "Message"
+            status: 'Message',
             customerName: customerName,
             customerEmail: customerEmail,
             customerPhone: customerPhone,
@@ -281,17 +285,15 @@ function verifySignature(data) {
 // Create Signature String
 // ============================================
 function createSignatureString(data) {
-    // PayNow requires specific order for signature
+    // PayNow requires specific order for signature:
+    // integrationId + reference + amount + currency
     const fields = [
         data.integrationId,
         data.reference,
         data.amount,
-        data.currency,
-        data.status || '',
-        data.paynowreference || '',
-        data.pollurl || ''
+        data.currency
     ];
-    
+
     return fields.join('');
 }
 

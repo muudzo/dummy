@@ -87,7 +87,7 @@ function updateCartDisplay() {
             <div class="cart-item">
                 <div class="cart-item-info">
                     <h4>${item.name}</h4>
-                    <p>ZWL ${item.price.toLocaleString()}</p>
+                    <p>USD ${item.price.toLocaleString()}</p>
                 </div>
                 <div class="cart-item-actions">
                     <div class="quantity-control">
@@ -96,7 +96,7 @@ function updateCartDisplay() {
                         <button onclick="updateQuantity(${item.id}, ${item.quantity + 1})">+</button>
                     </div>
                     <div style="text-align: right; min-width: 100px;">
-                        <p><strong>ZWL ${(item.price * item.quantity).toLocaleString()}</strong></p>
+                        <p><strong>USD ${(item.price * item.quantity).toLocaleString()}</strong></p>
                     </div>
                     <button class="remove-btn" onclick="removeFromCart(${item.id})">Remove</button>
                 </div>
@@ -320,7 +320,7 @@ function processPayment(payment) {
         <div class="success-message">
             <h3>✓ Payment Completed Successfully!</h3>
             <p><strong>Reference Number:</strong> ${payment.reference}</p>
-            <p><strong>Amount:</strong> ZWL ${Math.round(payment.totals.total).toLocaleString()}</p>
+            <p><strong>Amount:</strong> USD ${Math.round(payment.totals.total).toLocaleString()}</p>
             <p><strong>Customer:</strong> ${payment.customerName}</p>
             <p><strong>Email:</strong> ${payment.customerEmail}</p>
             <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
@@ -340,7 +340,7 @@ function processPendingPayment(payment) {
         <div class="success-message">
             <h3>✓ Order Submitted for Processing</h3>
             <p><strong>Reference Number:</strong> ${payment.reference}</p>
-            <p><strong>Amount:</strong> ZWL ${Math.round(payment.totals.total).toLocaleString()}</p>
+            <p><strong>Amount:</strong> USD ${Math.round(payment.totals.total).toLocaleString()}</p>
             <p><strong>Payment Status:</strong> Pending</p>
             <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
                 Your payment is pending. Please complete the payment using the reference number above via PayNow USSD and we will process your order immediately.

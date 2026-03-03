@@ -189,7 +189,7 @@ location.reload()
 - **Mobile:** Below 768px
 
 ## Currency
-All prices are in **ZWL (Zimbabwean Dollar)**
+All prices are in **USD (United States Dollar)**
 
 ## Notes
 
