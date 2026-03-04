@@ -1,46 +1,40 @@
 /**
  * PayNow Zimbabwe Payment Integration Server
- * Production-ready Express.js backend
- * 
- * Installation:
- * npm install express axios dotenv cors
- * 
- * Usage:
- * node paynow-server.js
+ * Refactored to use official PayNow Node.js SDK
  */
 
 require('dotenv').config();
 const express = require('express');
-const axios = require('axios');
 const cors = require('cors');
-const crypto = require('crypto');
+const { Paynow } = require('paynow');
 
 const app = express();
 
 // Middleware
-// Support both JSON (our own API) and URL-encoded bodies (PayNow webhooks)
 app.use(express.urlencoded({ extended: false }));
 app.use(express.json());
 app.use(cors());
 
-// Configuration
-const PAYNOW_CONFIG = {
-    integrationId: process.env.PAYNOW_INTEGRATION_ID || '23629',
-    integrationKey: process.env.PAYNOW_INTEGRATION_KEY || '0ac007f7-e809-424d-9d25-433d27335488',
-    // Per PayNow docs, use the interface endpoint for initiating transactions
-    apiUrl: 'https://www.paynow.co.zw/interface/initiatetransaction',
-    pollUrl: 'https://www.paynow.co.zw/api/poll-transaction',
-    returnUrl: process.env.RETURN_URL || 'http://localhost:3000/payment-return',
-    resultUrl: process.env.RESULT_URL || 'http://localhost:3000/payment-result',
-    // Merchant email used for test mode fake payments and auth
-    authemail: process.env.PAYNOW_MERCHANT_EMAIL || '',
-    // Default currency for transactions
-    currency: process.env.CURRENCY || 'USD'
-};
+// Configuration from .env
+const INTEGRATION_ID = process.env.PAYNOW_INTEGRATION_ID;
+const INTEGRATION_KEY = process.env.PAYNOW_INTEGRATION_KEY;
+const RESULT_URL = process.env.RESULT_URL || 'http://localhost:3000/payment-result';
+const RETURN_URL = process.env.RETURN_URL || 'http://localhost:3000/payment-return';
 
-console.log(`🚀 PayNow Integration Server`);
-console.log(`📍 Integration ID: ${PAYNOW_CONFIG.integrationId.substring(0, 5)}...`);
-console.log(`🔐 Using PayNow API: ${PAYNOW_CONFIG.apiUrl}`);
+// Validation: Ensure required keys exist
+if (!INTEGRATION_ID || !INTEGRATION_KEY) {
+    console.error('\n❌ CRITICAL ERROR: PAYNOW_INTEGRATION_ID or PAYNOW_INTEGRATION_KEY is missing in .env');
+    console.error('Please check your .env file and restart the server.\n');
+    process.exit(1);
+}
+
+// Initialize Paynow object
+const paynow = new Paynow(INTEGRATION_ID, INTEGRATION_KEY);
+paynow.resultUrl = RESULT_URL;
+paynow.returnUrl = RETURN_URL;
+
+console.log(`🚀 PayNow Integration Server (SDK Mode)`);
+console.log(`📍 Integration ID: ${INTEGRATION_ID.substring(0, 5)}... (Validated)`);
 
 // ============================================
 // Process Payment Endpoint
@@ -50,105 +44,47 @@ app.post('/api/process-payment', async (req, res) => {
         const {
             customerName,
             customerEmail,
-            customerPhone,
             totalAmount,
             reference,
-            items,
-            description
+            items
         } = req.body;
 
-        console.log(`\n💳 Processing payment for: ${reference}`);
-        console.log(`   Amount: ${PAYNOW_CONFIG.currency} ${totalAmount}`);
-        console.log(`   Customer: ${customerName}`);
+        console.log(`\n💳 Creating payment for: ${reference} (Amt: ${totalAmount})`);
 
-        // Validate required fields
-        if (!totalAmount || !reference || !customerEmail) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing required fields',
-                required: ['totalAmount', 'reference', 'customerEmail']
+        // 1. Create a new payment
+        let payment = paynow.createPayment(reference, customerEmail);
+
+        // 2. Add items to the payment list
+        // If items are provided as an array, add them; otherwise add a generic item
+        if (items && Array.isArray(items) && items.length > 0) {
+            items.forEach(item => {
+                payment.add(item.name, item.price * item.quantity);
             });
+        } else {
+            payment.add(`Order ${reference}`, totalAmount);
         }
 
-        // Prepare PayNow transaction payload using correct field names and formats
-        const paynowFields = {
-            id: PAYNOW_CONFIG.integrationId,
-            reference: reference,
-            amount: parseFloat(totalAmount).toFixed(2), // PayNow expects a decimal string
-            additionalinfo: description || `Order ${reference}`,
-            returnurl: PAYNOW_CONFIG.returnUrl,
-            resulturl: PAYNOW_CONFIG.resultUrl,
-            authemail: customerEmail,
-            // Per PayNow docs, initial status should be "Message"
-            status: 'Message'
-        };
+        // 3. Send the payment to PayNow
+        const response = await paynow.send(payment);
 
-        // Generate SHA512 hash over all fields + integration key (no HMAC)
-        paynowFields.hash = generatePaynowHash(paynowFields, PAYNOW_CONFIG.integrationKey);
-
-        console.log(`   Hash: ${paynowFields.hash.substring(0, 20)}...`);
-
-        // Send as URL-encoded form data (required by PayNow)
-        console.log(`   📤 Sending to PayNow API...`);
-        const formBody = new URLSearchParams(paynowFields).toString();
-
-        const response = await axios.post(
-            PAYNOW_CONFIG.apiUrl,
-            formBody,
-            {
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                timeout: 10000
-            }
-        );
-
-        // PayNow responds with URL-encoded key=value pairs, not JSON
-        const result = Object.fromEntries(new URLSearchParams(response.data));
-
-        console.log(`   ✅ PayNow Response:`, result);
-
-        // Handle PayNow response
-        if (result.status && result.status.toLowerCase() === 'ok') {
-            const paymentRecord = {
-                reference: reference,
-                paynowReference: result.paynowreference,
-                status: 'pending',
-                amount: parseFloat(totalAmount).toFixed(2),
-                currency: PAYNOW_CONFIG.currency,
-                customer: {
-                    name: customerName,
-                    email: customerEmail,
-                    phone: customerPhone
-                },
-                items: items,
-                redirectUrl: result.browserurl,
-                pollUrl: result.pollurl,
-                createdAt: new Date().toISOString(),
-                expiresAt: new Date(Date.now() + 1800000).toISOString() // 30 mins
-            };
-
-            // Save to database (implement based on your DB)
-            console.log(`   💾 Saved payment record`);
+        // 4. Handle response
+        if (response.success) {
+            console.log(`   ✅ PayNow Success! Redirecting user to secure link.`);
 
             return res.json({
                 success: true,
                 message: 'Payment initiated successfully',
-                reference: reference,
-                paynowReference: result.paynowreference,
-                redirectUrl: result.browserurl,
-                paymentLink: result.browserurl,
-                poll: {
-                    url: result.pollurl,
-                    interval: 3000 // 3 seconds
-                }
+                redirectUrl: response.redirectUrl,
+                paymentLink: response.redirectUrl, // for compatibility with script.js
+                pollUrl: response.pollUrl,
+                paynowReference: response.paynowReference || ''
             });
         } else {
-            console.error(`   ❌ PayNow Error:`, result);
+            console.error(`   ❌ PayNow Error:`, response.error);
             return res.status(400).json({
                 success: false,
                 message: 'Payment initiation failed',
-                error: result.error || result.status || result
+                error: response.error
             });
         }
     } catch (error) {
@@ -167,94 +103,83 @@ app.post('/api/process-payment', async (req, res) => {
 app.post('/api/check-payment-status', async (req, res) => {
     try {
         const { pollUrl } = req.body;
+        if (!pollUrl) return res.status(400).json({ success: false, message: 'Poll URL required' });
 
-        if (!pollUrl) {
-            return res.status(400).json({
-                success: false,
-                message: 'Poll URL is required'
-            });
-        }
+        console.log(`🔍 Checking status via SDK poll...`);
 
-        console.log(`\n🔍 Checking payment status...`);
+        const status = await paynow.pollTransactionStatus(pollUrl);
 
-        // Poll PayNow for status
-        const response = await axios.get(pollUrl, {
-            headers: {
-                'Accept': 'application/json'
-            },
-            timeout: 10000
-        });
-
-        console.log(`   Status: ${response.data.status}`);
+        console.log(`   Status: ${status.status}`);
 
         return res.json({
             success: true,
-            status: response.data.status,
-            data: response.data
+            status: status.status,
+            data: status
         });
     } catch (error) {
         console.error(`   ❌ Status check error:`, error.message);
-        return res.status(500).json({
-            success: false,
-            message: 'Error checking payment status',
-            error: error.message
-        });
+        return res.status(500).json({ success: false, error: error.message });
     }
 });
 
 // ============================================
-// Payment Result Webhook
+// Payment Results / Return Redirect
 // ============================================
+
+// 1. Webhook (Backend to Backend)
 app.post('/payment-result', async (req, res) => {
     try {
-        console.log(`\n🔔 Webhook received from PayNow`);
-        console.log(`   Status: ${req.body.status}`);
-        console.log(`   Reference: ${req.body.reference}`);
-
-        // Verify signature
-        if (!verifySignature(req.body)) {
-            console.warn(`   ⚠️ Invalid signature!`);
+        console.log(`\n🔔 Webhook received`);
+        const response = paynow.parseHttpResonse(req.body);
+        if (response.status) {
+            console.log(`   ✅ Webhook Verified. Status: ${response.status}`);
+            return res.json({ success: true });
+        } else {
+            console.warn(`   ⚠️ Webhook Verification Failed`);
             return res.status(401).json({ success: false });
         }
-
-        // Update payment status in database
-        const { reference, status, paynowreference } = req.body;
-
-        console.log(`   ✅ Signature verified`);
-        console.log(`   💾 Updating payment status to: ${status}`);
-
-        // Implement your database update here
-        // await updatePaymentStatus(reference, status);
-
-        // Send confirmation
-        res.json({ success: true });
     } catch (error) {
         console.error(`   ❌ Webhook error:`, error.message);
         res.status(500).json({ success: false });
     }
 });
 
-// ============================================
-// Health Check Endpoint
-// ============================================
-app.get('/health', (req, res) => {
-    res.json({
-        status: 'ok',
-        service: 'PayNow Zimbabwe Payment Gateway',
-        integrationId: PAYNOW_CONFIG.integrationId.substring(0, 5) + '...',
-        timestamp: new Date().toISOString()
-    });
+// 2. Return Page (User Browser Redirect)
+app.get('/payment-return', (req, res) => {
+    console.log(`\n🏠 Customer returned from PayNow (Redirect)`);
+    console.log(`   Reference: ${req.query.reference || 'None'}`);
+
+    res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Payment Complete | TechHub ZW</title>
+            <style>
+                body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 100px 20px; color: #333; }
+                .card { max-width: 500px; margin: 0 auto; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-top: 5px solid #007bff; }
+                h1 { color: #28a745; }
+                .btn { display: inline-block; padding: 12px 25px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="card">
+                <h1>Thank You!</h1>
+                <p>Your transaction has been processed by PayNow.</p>
+                <p><strong>Merchant Reference:</strong> ${req.query.reference || 'Contact Support'}</p>
+                <p>We have sent a confirmation email to your inbox.</p>
+                <a href="http://localhost:8000" class="btn">Return to Store</a>
+            </div>
+        </body>
+        </html>
+    `);
 });
 
 // ============================================
-// PayNow Hash Generation (initiate transaction)
+// Health Check
 // ============================================
-function generatePaynowHash(fields, integrationKey) {
-    // Concatenate ALL field values in the order defined on the object,
-    // then append the integration key at the end, per PayNow docs
-    const hashString = Object.values(fields).join('') + integrationKey;
-    return crypto.createHash('sha512').update(hashString).digest('hex').toUpperCase();
-}
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok', mode: 'SDK' });
+});
 
 // ============================================
 // Error Handler
@@ -278,12 +203,10 @@ app.use((req, res) => {
     });
 });
 
-// ============================================
 // Start Server
-// ============================================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`\n✅ Server running on port ${PORT}`);
+    console.log(`\n✅ Server running on port ${PORT} (using SDK)`);
     console.log(`📍 API URL: http://localhost:${PORT}`);
     console.log(`📌 Health: http://localhost:${PORT}/health`);
     console.log(`\n🔗 Endpoints:`);
