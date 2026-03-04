@@ -14,7 +14,7 @@ function initCart() {
 // Add item to cart
 function addToCart(id, name, price) {
     const existingItem = cart.find(item => item.id === id);
-    
+
     if (existingItem) {
         existingItem.quantity += 1;
     } else {
@@ -25,7 +25,7 @@ function addToCart(id, name, price) {
             quantity: 1
         });
     }
-    
+
     saveCart();
     updateCartDisplay();
     showNotification(`${name} added to cart!`);
@@ -62,7 +62,7 @@ function calculateTotals() {
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const tax = subtotal * 0.10; // 10% tax
     const total = subtotal + tax;
-    
+
     return {
         subtotal: subtotal,
         tax: tax,
@@ -74,11 +74,11 @@ function calculateTotals() {
 function updateCartDisplay() {
     const cartItemsDiv = document.getElementById('cart-items');
     const cartCountSpan = document.getElementById('cart-count');
-    
+
     // Update cart count
     const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
     cartCountSpan.textContent = totalItems;
-    
+
     // Update cart items display
     if (cart.length === 0) {
         cartItemsDiv.innerHTML = '<div class="empty-cart"><p>Your cart is empty</p></div>';
@@ -103,7 +103,7 @@ function updateCartDisplay() {
             </div>
         `).join('');
     }
-    
+
     // Update summary
     const totals = calculateTotals();
     document.getElementById('subtotal').textContent = `USD ${totals.subtotal.toLocaleString()}`;
@@ -117,7 +117,7 @@ function checkout() {
         showNotification('Your cart is empty!', 'error');
         return;
     }
-    
+
     const totals = calculateTotals();
     openPaymentModal(totals.total);
 }
@@ -126,26 +126,26 @@ function checkout() {
 function openPaymentModal(total) {
     const modal = document.getElementById('payment-modal');
     const paymentAmount = document.getElementById('payment-amount');
-    
+
     paymentAmount.textContent = `USD ${Math.round(total).toLocaleString()}`;
-    
+
     // Generate unique reference
     const reference = generatePayNowReference();
     document.getElementById('paynow-reference').value = reference;
     document.getElementById('ref-display').textContent = reference;
-    
+
     modal.classList.add('show');
-    
+
     // Show reference box when form is focused
-    document.getElementById('paynow-form').addEventListener('click', function() {
+    document.getElementById('paynow-form').addEventListener('click', function () {
         document.getElementById('generated-reference').style.display = 'block';
     });
-    
+
     // Update PayNow link when fields change
-    const updatePayNowLink = function() {
+    const updatePayNowLink = function () {
         const email = document.getElementById('customer-email').value;
         const name = document.getElementById('customer-name').value;
-        
+
         if (email && reference) {
             const paymentLink = generatePayNowLink({
                 amount: Math.round(total),
@@ -153,11 +153,11 @@ function openPaymentModal(total) {
                 customerEmail: email,
                 customerName: name || 'Customer'
             });
-            
+
             document.getElementById('paynow-link').href = paymentLink;
         }
     };
-    
+
     // Update link on input change
     document.getElementById('customer-email').addEventListener('change', updatePayNowLink);
     document.getElementById('customer-name').addEventListener('change', updatePayNowLink);
@@ -172,11 +172,11 @@ function closePaymentModal() {
 // Generate PayNow Payment Link
 function generatePayNowLink(paymentData) {
     const { amount, reference, customerEmail, customerName } = paymentData;
-    
+
     // PayNow payment link format
     // This creates a link to the PayNow payment page
     const baseUrl = 'https://www.paynow.co.zw/Payment/Link/';
-    
+
     // Build query parameters
     const params = {
         search: customerEmail,
@@ -184,12 +184,12 @@ function generatePayNowLink(paymentData) {
         reference: reference,
         l: 0
     };
-    
+
     // URL encode the parameters
     const queryString = Object.keys(params)
         .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
         .join('&');
-    
+
     // Return the full PayNow link
     return `${baseUrl}?q=${btoa(queryString)}`;
 }
@@ -213,61 +213,85 @@ function generatePayNowReference() {
 }
 
 // Handle PayNow payment submission
-function handlePayNowPayment(event) {
+async function handlePayNowPayment(event) {
     event.preventDefault();
-    
+
     const customerName = document.getElementById('customer-name').value;
     const customerEmail = document.getElementById('customer-email').value;
     const customerPhone = document.getElementById('customer-phone').value;
     const paymentReference = document.getElementById('paynow-reference').value;
     const paymentStatus = document.getElementById('payment-status').value;
-    
+
     // Validate form
     if (!customerName || !customerEmail || !customerPhone || !paymentStatus) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
-    
+
     // Handle PayNow Direct Link
     if (paymentStatus === 'paynow-direct') {
         const totals = calculateTotals();
-        const paymentAmount = Math.round(totals.total);
-        
-        // Generate PayNow payment link
-        const paymentLink = generatePayNowLink({
-            amount: paymentAmount,
-            reference: paymentReference,
-            customerEmail: customerEmail,
-            customerName: customerName
-        });
-        
-        // Create payment object
-        const payment = {
-            timestamp: new Date().toISOString(),
-            reference: paymentReference,
-            customerName: customerName,
-            customerEmail: customerEmail,
-            customerPhone: customerPhone,
-            paymentStatus: 'pending',
-            paymentMethod: 'paynow-direct',
-            items: cart,
-            totals: calculateTotals(),
-            gateway: 'PayNow Zimbabwe',
-            paymentLink: paymentLink
-        };
-        
-        // Save payment record
-        savePaymentRecord(payment);
-        
-        // Redirect to PayNow
-        setTimeout(() => {
-            window.location.href = paymentLink;
-        }, 1000);
-        
-        showNotification('Redirecting to PayNow...', 'success');
+
+        showNotification('Initiating connection to PayNow...', 'success');
+
+        try {
+            // Call backend API instead of generating link locally
+            const response = await fetch('http://localhost:3000/api/process-payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    customerName: customerName,
+                    customerEmail: customerEmail,
+                    customerPhone: customerPhone,
+                    totalAmount: totals.total,
+                    reference: paymentReference,
+                    items: cart,
+                    description: `Order ${paymentReference}`
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                // Create payment object
+                const payment = {
+                    timestamp: new Date().toISOString(),
+                    reference: paymentReference,
+                    paynowReference: data.paynowReference,
+                    customerName: customerName,
+                    customerEmail: customerEmail,
+                    customerPhone: customerPhone,
+                    paymentStatus: 'pending',
+                    paymentMethod: 'paynow-direct',
+                    items: cart,
+                    totals: calculateTotals(),
+                    gateway: 'PayNow Zimbabwe',
+                    paymentLink: data.paymentLink,
+                    pollUrl: data.poll ? data.poll.url : null
+                };
+
+                // Save payment record
+                savePaymentRecord(payment);
+
+                // Redirect to PayNow
+                setTimeout(() => {
+                    window.location.href = data.redirectUrl || data.paymentLink;
+                }, 1000);
+
+                showNotification('Redirecting to PayNow secure payment page...', 'success');
+            } else {
+                showNotification('Payment failed: ' + (data.message || 'Unknown error'), 'error');
+                console.error('Payment Error Data:', data);
+            }
+        } catch (error) {
+            console.error('Payment API Error:', error);
+            showNotification('Error connecting to payment server. Please try again.', 'error');
+        }
         return;
     }
-    
+
     // Handle USSD Method
     if (paymentStatus === 'paynow-ussd') {
         const payment = {
@@ -282,12 +306,12 @@ function handlePayNowPayment(event) {
             totals: calculateTotals(),
             gateway: 'PayNow Zimbabwe'
         };
-        
+
         savePaymentRecord(payment);
         processPendingPayment(payment);
         return;
     }
-    
+
     // Handle Demo Mode
     if (paymentStatus === 'demo') {
         const payment = {
@@ -302,7 +326,7 @@ function handlePayNowPayment(event) {
             totals: calculateTotals(),
             gateway: 'PayNow Zimbabwe (Demo)'
         };
-        
+
         savePaymentRecord(payment);
         processPayment(payment);
         return;
@@ -315,7 +339,7 @@ function processPayment(payment) {
     const modal = document.getElementById('payment-modal');
     const modalContent = document.querySelector('.modal-content');
     const formHTML = modalContent.innerHTML;
-    
+
     modalContent.innerHTML = `
         <div class="success-message">
             <h3>✓ Payment Completed Successfully!</h3>
@@ -335,7 +359,7 @@ function processPayment(payment) {
 function processPendingPayment(payment) {
     const modal = document.getElementById('payment-modal');
     const modalContent = document.querySelector('.modal-content');
-    
+
     modalContent.innerHTML = `
         <div class="success-message">
             <h3>✓ Order Submitted for Processing</h3>
@@ -363,11 +387,11 @@ function completeOrder() {
     cart = [];
     saveCart();
     updateCartDisplay();
-    
+
     // Reset form
     document.getElementById('paynow-form').reset();
     document.getElementById('generated-reference').style.display = 'none';
-    
+
     // Restore modal content
     location.reload();
 }
@@ -377,7 +401,7 @@ function savePaymentRecord(payment) {
     let payments = JSON.parse(localStorage.getItem('payments')) || [];
     payments.push(payment);
     localStorage.setItem('payments', JSON.stringify(payments));
-    
+
     // Log to console (in real app, this would be sent to backend)
     console.log('Payment Record Saved:', payment);
 }
@@ -397,7 +421,7 @@ function showNotification(message, type = 'success') {
         animation: slideInRight 0.3s ease;
     `;
     notification.textContent = message;
-    
+
     if (type === 'success') {
         notification.style.backgroundColor = '#d4edda';
         notification.style.color = '#155724';
@@ -407,16 +431,16 @@ function showNotification(message, type = 'success') {
         notification.style.color = '#721c24';
         notification.style.border = '1px solid #f5c6cb';
     }
-    
+
     document.body.appendChild(notification);
-    
+
     setTimeout(() => {
         notification.remove();
     }, 3000);
 }
 
 // Close modal when clicking outside
-window.onclick = function(event) {
+window.onclick = function (event) {
     const modal = document.getElementById('payment-modal');
     if (event.target == modal) {
         closePaymentModal();
@@ -424,12 +448,25 @@ window.onclick = function(event) {
 }
 
 // Initialize on page load
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     initCart();
-    
+
+    // Toggle PayNow button container based on payment method
+    const paymentStatusEl = document.getElementById('payment-status');
+    if (paymentStatusEl) {
+        paymentStatusEl.addEventListener('change', function (e) {
+            const paynowContainer = document.getElementById('paynow-button-container');
+            if (e.target.value === 'paynow-direct') {
+                paynowContainer.style.display = 'block';
+            } else {
+                paynowContainer.style.display = 'none';
+            }
+        });
+    }
+
     // Add smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function(e) {
+        anchor.addEventListener('click', function (e) {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
@@ -458,7 +495,7 @@ function exportCheckoutData() {
         payments: getPaymentHistory(),
         exportDate: new Date().toISOString()
     };
-    
+
     const dataStr = JSON.stringify(data, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
