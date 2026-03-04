@@ -467,12 +467,21 @@ document.addEventListener('DOMContentLoaded', function () {
     // Add smooth scrolling for navigation links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth'
-                });
+            const href = this.getAttribute('href');
+            // Ensure the href actually starts with # and isn't just a full URL that contains a hash
+            if (href && href.startsWith('#') && href !== '#') {
+                try {
+                    const target = document.querySelector(href);
+                    if (target) {
+                        e.preventDefault();
+                        target.scrollIntoView({
+                            behavior: 'smooth'
+                        });
+                    }
+                } catch (error) {
+                    // Ignore DOMException for invalid selectors
+                    console.debug('Invalid selector for smooth scrolling:', href);
+                }
             }
         });
     });
