@@ -205,6 +205,41 @@ function copyReference() {
     });
 }
 
+// Status Polling for Express Checkout
+function startStatusPolling(pollUrl, reference) {
+    showNotification('Waiting for you to enter PIN on your phone...', 'success');
+
+    const pollInterval = setInterval(async () => {
+        try {
+            const response = await fetch('http://localhost:3000/api/check-payment-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pollUrl: pollUrl })
+            });
+
+            const data = await response.json();
+
+            if (data.success && data.status === 'Paid') {
+                clearInterval(pollInterval);
+                showNotification('Payment Successful! Thank you.', 'success');
+
+                // Finalize order
+                setTimeout(() => {
+                    alert(`Check Out Successful! \nReference: ${reference}`);
+                    closePaymentModal();
+                    cart = [];
+                    updateCartDisplay();
+                }, 2000);
+            } else if (data.success && (data.status === 'Cancelled' || data.status === 'Refused')) {
+                clearInterval(pollInterval);
+                showNotification(`Payment ${data.status}. Please try again.`, 'error');
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, 5000); // Poll every 5 seconds
+}
+
 // Generate unique PayNow reference number
 function generatePayNowReference() {
     const timestamp = Date.now().toString();
@@ -225,6 +260,46 @@ async function handlePayNowPayment(event) {
     // Validate form
     if (!customerName || !customerEmail || !customerPhone || !paymentStatus) {
         showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+
+    // Handle Express Checkout (EcoCash / OneMoney)
+    if (['ecocash', 'onemoney'].includes(paymentStatus)) {
+        const phone = document.getElementById('mobile-phone').value;
+        if (!phone) {
+            showNotification('Please enter your mobile money number', 'error');
+            return;
+        }
+
+        const totals = calculateTotals();
+        showNotification(`Sending ${paymentStatus.toUpperCase()} push prompt...`, 'success');
+
+        try {
+            const response = await fetch('http://localhost:3000/api/process-mobile-payment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    totalAmount: totals.total,
+                    reference: paymentReference,
+                    customerEmail: customerEmail,
+                    phone: phone,
+                    method: paymentStatus
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showNotification(data.instructions, 'success');
+                // Start polling for status
+                startStatusPolling(data.pollUrl, paymentReference);
+            } else {
+                showNotification('Mobile payment failed: ' + (data.error || 'Unknown error'), 'error');
+            }
+        } catch (error) {
+            console.error('Mobile Payment API Error:', error);
+            showNotification('Error connecting to payment server.', 'error');
+        }
         return;
     }
 
@@ -456,11 +531,11 @@ document.addEventListener('DOMContentLoaded', function () {
     if (paymentStatusEl) {
         paymentStatusEl.addEventListener('change', function (e) {
             const paynowContainer = document.getElementById('paynow-button-container');
-            if (e.target.value === 'paynow-direct') {
-                paynowContainer.style.display = 'block';
-            } else {
-                paynowContainer.style.display = 'none';
-            }
+            const mobilePhoneGroup = document.getElementById('mobile-phone-group');
+
+            // Show/hide based on selection
+            paynowContainer.style.display = (e.target.value === 'paynow-direct') ? 'block' : 'none';
+            mobilePhoneGroup.style.display = (['ecocash', 'onemoney'].includes(e.target.value)) ? 'block' : 'none';
         });
     }
 

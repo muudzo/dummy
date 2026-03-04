@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TechHub ZW - Digital Products Store</title>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <header>
         <div class="container">
@@ -38,7 +40,8 @@
                     <h3>Premium Web Template</h3>
                     <p>Modern, responsive website template</p>
                     <p class="price">USD 5,000</p>
-                    <button class="btn btn-add" onclick="addToCart(1, 'Premium Web Template', 5000)">Add to Cart</button>
+                    <button class="btn btn-add" onclick="addToCart(1, 'Premium Web Template', 5000)">Add to
+                        Cart</button>
                 </div>
 
                 <div class="product-card">
@@ -62,7 +65,8 @@
                     <h3>API Integration Guide</h3>
                     <p>Comprehensive API documentation</p>
                     <p class="price">USD 2,500</p>
-                    <button class="btn btn-add" onclick="addToCart(4, 'API Integration Guide', 2500)">Add to Cart</button>
+                    <button class="btn btn-add" onclick="addToCart(4, 'API Integration Guide', 2500)">Add to
+                        Cart</button>
                 </div>
 
                 <div class="product-card">
@@ -70,7 +74,8 @@
                     <h3>Security Audit Service</h3>
                     <p>Professional website security review</p>
                     <p class="price">USD 12,000</p>
-                    <button class="btn btn-add" onclick="addToCart(5, 'Security Audit Service', 12000)">Add to Cart</button>
+                    <button class="btn btn-add" onclick="addToCart(5, 'Security Audit Service', 12000)">Add to
+                        Cart</button>
                 </div>
 
                 <div class="product-card">
@@ -115,7 +120,7 @@
                 <p><strong>Order Total:</strong> <span id="payment-amount">USD 0</span></p>
                 <p><strong>Payment Gateway:</strong> PayNow Zimbabwe</p>
                 <div class="divider"></div>
-                
+
                 <div class="paynow-section">
                     <h3>PayNow Payment Options</h3>
                     <form id="paynow-form" onsubmit="handlePayNowPayment(event)">
@@ -136,7 +141,8 @@
 
                         <div class="form-group">
                             <label for="paynow-reference">PayNow Reference/Reference Number:</label>
-                            <input type="text" id="paynow-reference" placeholder="Your unique reference (optional)" readonly>
+                            <input type="text" id="paynow-reference" placeholder="Your unique reference (optional)"
+                                readonly>
                         </div>
 
                         <div class="payment-info">
@@ -153,7 +159,8 @@
                         <div id="generated-reference" class="reference-box" style="display: none;">
                             <p><strong>Your PayNow Reference:</strong></p>
                             <p id="ref-display" style="font-size: 18px; font-weight: bold; color: #007bff;"></p>
-                            <button type="button" class="btn btn-secondary" onclick="copyReference()">Copy Reference</button>
+                            <button type="button" class="btn btn-secondary" onclick="copyReference()">Copy
+                                Reference</button>
                         </div>
 
                         <div class="form-group">
@@ -161,18 +168,29 @@
                             <select id="payment-status" required>
                                 <option value="">-- Select Payment Method --</option>
                                 <option value="paynow-direct">Pay Now via PayNow Link</option>
+                                <option value="ecocash">EcoCash (Express Checkout)</option>
+                                <option value="onemoney">OneMoney (Express Checkout)</option>
                                 <option value="paynow-ussd">Pay Now via USSD (*120# / *151#)</option>
                                 <option value="demo">Demo/Test Mode</option>
                             </select>
+                        </div>
+
+                        <div class="form-group" id="mobile-phone-group" style="display: none; margin-top: 15px;">
+                            <label for="mobile-phone">Mobile Money Number (+263):</label>
+                            <input type="tel" id="mobile-phone" class="form-control" placeholder="0771234567">
+                            <small style="display: block; color: #666; margin-top: 5px;">Enter the number that will
+                                receive the USSD PIN prompt.</small>
                         </div>
 
                         <!-- PayNow Direct Link Button -->
                         <div id="paynow-button-container" style="display: none; text-align: center; margin: 20px 0;">
                             <p style="margin-bottom: 15px;"><strong>Click to pay directly via PayNow:</strong></p>
                             <a id="paynow-link" style="cursor: pointer;">
-                                <img src='https://www.paynow.co.zw/Content/Buttons/Medium_buttons/button_pay-now_medium.png' style='border:0; max-width: 100%;' alt='Pay Now' />
+                                <img src='https://www.paynow.co.zw/Content/Buttons/Medium_buttons/button_pay-now_medium.png'
+                                    style='border:0; max-width: 100%;' alt='Pay Now' />
                             </a>
-                            <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">You will be redirected to PayNow's secure payment page</p>
+                            <p style="font-size: 0.9rem; color: #666; margin-top: 10px;">You will be redirected to
+                                PayNow's secure payment page</p>
                         </div>
 
                         <button type="submit" class="btn btn-primary">Complete Purchase</button>
@@ -202,4 +220,5 @@
 
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -98,6 +98,47 @@ app.post('/api/process-payment', async (req, res) => {
 });
 
 // ============================================
+// Process Mobile Payment Endpoint (Express Checkout)
+// ============================================
+app.post('/api/process-mobile-payment', async (req, res) => {
+    try {
+        const { totalAmount, reference, customerEmail, phone, method } = req.body;
+
+        console.log(`\n📱 Creating mobile payment for: ${reference} (${method})`);
+
+        // 1. Create a new payment
+        let payment = paynow.createPayment(reference, customerEmail);
+        payment.add(`Order ${reference}`, totalAmount);
+
+        // 2. Send the mobile payment request (EcoCash/OneMoney)
+        const response = await paynow.sendMobile(payment, phone, method);
+
+        if (response.success) {
+            console.log(`   ✅ Mobile Push Sent! Instructions: ${response.instructions}`);
+            return res.json({
+                success: true,
+                pollUrl: response.pollUrl,
+                instructions: response.instructions || 'Check your phone for the PIN prompt.'
+            });
+        } else {
+            console.error(`   ❌ Mobile Payment Error:`, response.error);
+            return res.status(400).json({
+                success: false,
+                message: 'Mobile payment initiation failed',
+                error: response.error
+            });
+        }
+    } catch (error) {
+        console.error(`   ❌ Mobile Server Error:`, error.message);
+        return res.status(500).json({
+            success: false,
+            message: 'Server error while processing mobile payment',
+            error: error.message
+        });
+    }
+});
+
+// ============================================
 // Check Payment Status Endpoint
 // ============================================
 app.post('/api/check-payment-status', async (req, res) => {
@@ -107,12 +148,12 @@ app.post('/api/check-payment-status', async (req, res) => {
 
         console.log(`🔍 Checking status via SDK poll...`);
 
-        const status = await paynow.pollTransactionStatus(pollUrl);
+        const status = await paynow.pollTransaction(pollUrl);
 
         console.log(`   Status: ${status.status}`);
 
         return res.json({
-            success: true,
+            success: status.success,
             status: status.status,
             data: status
         });
@@ -130,7 +171,8 @@ app.post('/api/check-payment-status', async (req, res) => {
 app.post('/payment-result', async (req, res) => {
     try {
         console.log(`\n🔔 Webhook received`);
-        const response = paynow.parseHttpResonse(req.body);
+        // The SDK helps parse and verify the result
+        const response = paynow.parseHttpResponse(req.body);
         if (response.status) {
             console.log(`   ✅ Webhook Verified. Status: ${response.status}`);
             return res.json({ success: true });
