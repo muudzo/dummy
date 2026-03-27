@@ -729,3 +729,30 @@ footer {
     margin-bottom: 1rem;
     border-left: 4px solid #dc3545;
 }
+/* BillPay Specific */
+.billpay-link {
+    color: #ffc107 !important; /* Gold color to stand out */
+    font-weight: bold;
+}
+
+#validation-result {
+    padding: 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+#validation-result.success {
+    background-color: #d4edda;
+    color: #155724;
+    display: block;
+}
+
+#validation-result.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    display: block;
+}
+
+#bill-category, #biller-select {
+    background-color: #fff;
+}

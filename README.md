@@ -1,6 +1,6 @@
 # TechHub Zimbabwe - Dummy Website with PayNow Integration
 
-A fully functional e-commerce dummy website with PayNow Zimbabwe payment gateway integration.
+A fully functional e-commerce dummy website with PayNow Zimbabwe payment gateway  integration.
 
 ## Overview
 

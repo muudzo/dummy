@@ -604,3 +604,192 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+// BillPay Integration Logic
+
+// Open BillPay Modal
+async function openBillPayModal() {
+    const modal = document.getElementById('billpay-modal');
+    modal.classList.add('show');
+    
+    // Fetch categories on open
+    await fetchBillPayCategories();
+}
+
+// Close BillPay Modal
+function closeBillPayModal() {
+    const modal = document.getElementById('billpay-modal');
+    modal.classList.remove('show');
+    document.getElementById('billpay-form').reset();
+    document.getElementById('validation-result').style.display = 'none';
+    document.getElementById('biller-select').innerHTML = '<option value="">-- Select Biller --</option>';
+}
+
+// Fetch BillPay Categories
+async function fetchBillPayCategories() {
+    const categorySelect = document.getElementById('bill-category');
+    categorySelect.innerHTML = '<option value="">Loading...</option>';
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/billpay/categories');
+        const data = await response.json();
+        
+        if (data.success) {
+            categorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+            data.categories.forEach(category => {
+                const option = document.createElement('option');
+                option.value = category.id;
+                option.textContent = category.name;
+                categorySelect.appendChild(option);
+            });
+        } else {
+            categorySelect.innerHTML = '<option value="">Error loading categories</option>';
+            showNotification('Failed to load bill categories', 'error');
+        }
+    } catch (error) {
+        console.error('Fetch categories error:', error);
+        categorySelect.innerHTML = '<option value="">Server Error</option>';
+    }
+}
+
+// Fetch Billers by Category
+async function fetchBillersByCategory() {
+    const categoryId = document.getElementById('bill-category').value;
+    const billerSelect = document.getElementById('biller-select');
+    
+    if (!categoryId) {
+        billerSelect.innerHTML = '<option value="">-- Select Biller --</option>';
+        return;
+    }
+    
+    billerSelect.innerHTML = '<option value="">Loading...</option>';
+    
+    try {
+        const response = await fetch(`http://localhost:3000/api/billpay/billers?categoryId=${categoryId}`);
+        const data = await response.json();
+        
+        if (data.success) {
+            billerSelect.innerHTML = '<option value="">-- Select Biller --</option>';
+            data.billers.forEach(biller => {
+                const option = document.createElement('option');
+                option.value = biller.id;
+                option.textContent = biller.name;
+                billerSelect.appendChild(option);
+            });
+        } else {
+            showNotification('Failed to load billers', 'error');
+        }
+    } catch (error) {
+        console.error('Fetch billers error:', error);
+    }
+}
+
+// Validate Bill Account
+async function validateBillAccount() {
+    const billerId = document.getElementById('biller-select').value;
+    const accountReference = document.getElementById('bill-account').value;
+    const resultEl = document.getElementById('validation-result');
+    
+    if (!billerId || !accountReference) {
+        showNotification('Please select a biller and enter account number', 'error');
+        return;
+    }
+    
+    resultEl.className = '';
+    resultEl.textContent = 'Validating...';
+    resultEl.style.display = 'block';
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/billpay/validate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ billerId, accountReference })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success && data.valid) {
+            resultEl.className = 'success';
+            resultEl.textContent = `✓ Account Valid: ${data.customerName}`;
+        } else {
+            resultEl.className = 'error';
+            resultEl.textContent = `✗ ${data.error || 'Invalid account number'}`;
+        }
+    } catch (error) {
+        console.error('Validation error:', error);
+        resultEl.className = 'error';
+        resultEl.textContent = 'Server error during validation';
+    }
+}
+
+// Handle Bill Payment Submission
+async function handleBillPayment(event) {
+    event.preventDefault();
+    
+    const submitBtn = document.getElementById('bill-submit-btn');
+    const originalText = submitBtn.textContent;
+    
+    const payload = {
+        billerId: document.getElementById('biller-select').value,
+        accountReference: document.getElementById('bill-account').value,
+        amount: document.getElementById('bill-amount').value,
+        phone: document.getElementById('bill-phone').value,
+        method: document.getElementById('bill-method').value,
+        customerEmail: document.getElementById('bill-email').value
+    };
+    
+    if (!payload.billerId || !payload.accountReference || !payload.amount || !payload.phone) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    try {
+        const response = await fetch('http://localhost:3000/api/billpay/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification('Bill payment initiated!', 'success');
+            showNotification(data.instructions, 'success');
+            
+            // Poll for status like shopping cart checkout
+            startStatusPolling(data.pollUrl, 'BILL-' + payload.accountReference);
+            
+            // Success view
+            const modalContent = document.querySelector('#billpay-modal .modal-content');
+            modalContent.innerHTML = `
+                <div class="success-message">
+                    <h3>✓ Bill Payment Initiated!</h3>
+                    <p><strong>Biller:</strong> ${document.getElementById('biller-select').options[document.getElementById('biller-select').selectedIndex].text}</p>
+                    <p><strong>Account:</strong> ${payload.accountReference}</p>
+                    <p><strong>Amount:</strong> USD ${payload.amount}</p>
+                    <p style="margin-top:1rem;">Please check your phone for the USSD prompt to complete the payment.</p>
+                </div>
+                <button class="btn btn-primary" style="width:100%" onclick="closeBillPayModal(); location.reload();">Close</button>
+            `;
+        } else {
+            showNotification('Bill payment failed: ' + (data.error || 'Unknown error'), 'error');
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    } catch (error) {
+        console.error('Bill payment error:', error);
+        showNotification('Error connecting to payment server', 'error');
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
+}
+
+// Close BillPay modal when clicking outside
+window.addEventListener('click', function(event) {
+    const billPayModal = document.getElementById('billpay-modal');
+    if (event.target == billPayModal) {
+        closeBillPayModal();
+    }
+});
